@@ -138,6 +138,7 @@ class ServerAPI:
         event_type: str,
         client: str,
         hostname: str,
+        name:str,
         created: Optional[datetime] = None,
         data: Optional[Dict[str, Any]] = None,
     ) -> bool:
@@ -164,6 +165,7 @@ class ServerAPI:
             type=event_type,
             client=client,
             hostname=hostname,
+            name=name,
             created=created,
             data=data,
         )
@@ -176,6 +178,7 @@ class ServerAPI:
         event_type: Optional[str] = None,
         client: Optional[str] = None,
         hostname: Optional[str] = None,
+        name: Optional[str] = None,
         data: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Update bucket metadata"""
@@ -184,6 +187,7 @@ class ServerAPI:
             type=event_type,
             client=client,
             hostname=hostname,
+            name=name,
             data=data,
         )
         return None

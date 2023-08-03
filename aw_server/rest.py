@@ -75,6 +75,7 @@ create_bucket = api.model(
         "client": fields.String(required=True),
         "type": fields.String(required=True),
         "hostname": fields.String(required=True),
+        "name": fields.String(required=True),
     },
 )
 
@@ -84,6 +85,7 @@ update_bucket = api.model(
         "client": fields.String(required=False),
         "type": fields.String(required=False),
         "hostname": fields.String(required=False),
+        "name": fields.String(required=False),
         "data": fields.String(required=False),
     },
 )
@@ -151,6 +153,7 @@ class BucketResource(Resource):
             event_type=data["type"],
             client=data["client"],
             hostname=data["hostname"],
+            name=data["name"]
         )
         if bucket_created:
             return {}, 200

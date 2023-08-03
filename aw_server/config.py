@@ -4,7 +4,7 @@ default_config = """
 [server]
 host = "localhost"
 port = "5600"
-storage = "peewee"
+storage = "postgrey"
 cors_origins = ""
 
 [server.custom_static]
@@ -12,7 +12,7 @@ cors_origins = ""
 [server-testing]
 host = "localhost"
 port = "5666"
-storage = "peewee"
+storage = "postgrey"
 cors_origins = ""
 
 [server-testing.custom_static]
