@@ -3,6 +3,10 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List
 
+from functools import wraps
+from flask_jwt import JWTError
+
+
 import aw_datastore
 import flask.json.provider
 from aw_datastore import Datastore
@@ -11,6 +15,8 @@ from flask import (
     Flask,
     current_app,
     send_from_directory,
+    request,
+    jsonify,
 )
 from flask_cors import CORS
 
@@ -18,6 +24,7 @@ from . import rest
 from .api import ServerAPI
 from .custom_static import get_custom_static_blueprint
 from .log import FlaskLogHandler
+from .generate import TokenGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +58,8 @@ class AWFlask(Flask):
             static_url_path=static_url_path,
         )
         self.config["HOST"] = host  # needed for host-header check
-        with self.app_context():
-            _config_cors(cors_origins, testing)
+       # with self.app_context():
+        self._config_cors(cors_origins, testing)
 
         # Initialize datastore and API
         if storage_method is None:
@@ -64,6 +71,23 @@ class AWFlask(Flask):
         self.register_blueprint(rest.blueprint)
         self.register_blueprint(get_custom_static_blueprint(custom_static))
 
+    def _config_cors(self, cors_origins: List[str], testing: bool):
+        if cors_origins:
+            logger.warning(
+                "Running with additional allowed CORS origins specified through config "
+                "or CLI argument (could be a security risk): {}".format(cors_origins)
+            )
+
+        if testing:
+            # Used for development of aw-webui
+            cors_origins.append("http://127.0.0.1:27180/*")
+
+        # TODO: This could probably be more specific
+        #       See https://github.com/ActivityWatch/aw-server/pull/43#issuecomment-386888769
+        cors_origins.append("moz-extension://*")
+
+        # See: https://flask-cors.readthedocs.org/en/latest/
+        CORS(self, resources={r"/api/*": {"origins": cors_origins}})
 
 class CustomJSONProvider(flask.json.provider.DefaultJSONProvider):
     # encoding/decoding of datetime as iso8601 strings
@@ -82,6 +106,27 @@ class CustomJSONProvider(flask.json.provider.DefaultJSONProvider):
 @root.route("/")
 def static_root():
     return current_app.send_static_file("index.html")
+
+token_generator = TokenGenerator()
+@root.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        # Handle the POST request data and perform registration
+        data = request.get_json()
+        # Perform registration logic here...
+        # For example, you can extract the hostname from the JSON data
+        hostname = data.get("hostname")
+        if hostname:
+            token = token_generator.generate_token(hostname, expiration_days=1)
+            token_str = token.decode("utf-8")
+            response_data = {"message": "Registration successful!", "hostname": hostname,"token":token_str}
+            return jsonify(response_data), 200
+        else:
+            response_data = {"error": "Invalid request data"}
+            return jsonify(response_data), 400
+        
+    else:
+        return "Hello"
 
 
 @root.route("/css/<path:path>")
@@ -129,6 +174,8 @@ def _start(
         cors_origins=cors_origins,
         custom_static=custom_static,
     )
+    # Register the authentication handler
+
     try:
         app.run(
             debug=testing,

@@ -21,7 +21,22 @@ from . import logger
 from .api import ServerAPI
 from .exceptions import BadRequest, Unauthorized
 
+import jwt
 
+def validate_token(token):
+    try:
+        #print("\n TOKEN BEFORE PAYLOAD", token)
+        payload = jwt.decode(token, "M4nd1r1", algorithms="HS256")
+
+        #print("\n Payload HASIL REST.PY", payload, "\n")
+        return payload['username']
+    except jwt.ExpiredSignatureError:
+        # Token has expired
+        return None
+    except jwt.InvalidTokenError:
+        # Invalid token
+        return None
+    
 def host_header_check(f):
     """
     Protects against DNS rebinding attacks (see https://github.com/ActivityWatch/activitywatch/security/advisories/GHSA-v9fg-6g9j-h4x4)
@@ -42,6 +57,17 @@ def host_header_check(f):
         else:
             if req_host.split(":")[0] not in ["localhost", "127.0.0.1", server_host]:
                 return {"message": f"host header is invalid (was {req_host})"}, 400
+            
+        # Check the authorization token
+        authorization_header = request.headers.get("Authorization")
+        if not authorization_header:
+            return {"message": "Authorization token is missing"}, 401
+       
+        #print("Authorization Token Header REST.PY:", authorization_header)
+        hostname = validate_token(authorization_header)
+        if not hostname:
+            return {"message": f"Invalid Token Not Hostname"}, 401
+        
         return f(*args, **kwargs)
 
     return decorator
