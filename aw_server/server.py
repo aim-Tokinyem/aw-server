@@ -117,7 +117,7 @@ def register():
         # For example, you can extract the hostname from the JSON data
         hostname = data.get("hostname")
         if hostname:
-            token = token_generator.generate_token(hostname, expiration_days=1)
+            token = token_generator.generate_token(hostname)
             token_str = token.decode("utf-8")
             response_data = {"message": "Registration successful!", "hostname": hostname,"token":token_str}
             return jsonify(response_data), 200
