@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from typing import Dict, List
-
+from .config import load_config
 from functools import wraps
 from flask_jwt import JWTError
 
@@ -177,6 +177,15 @@ def _start(
     # Register the authentication handler
 
     try:
+        protocol = "http"
+        _config = load_config()
+        server_config = _config["server" if not testing else "server-testing"]
+        server_protocol = server_config.get("protocol", protocol)  # Use protocol if not specified
+        print(f"&&&server_protocol = {server_protocol}")
+        if server_protocol == "https":
+            ssl_context = ('server_certA.pem', 'server_keyA.pem')
+        else:
+            ssl_context = None
         app.run(
             debug=testing,
             host=host,
@@ -184,6 +193,7 @@ def _start(
             request_handler=FlaskLogHandler,
             use_reloader=False,
             threaded=True,
+            ssl_context=ssl_context
         )
     except OSError as e:
         logger.exception(e)
