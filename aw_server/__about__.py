@@ -5,6 +5,7 @@ from typing import Optional
 from pathlib import Path
 
 from importlib.metadata import PackageNotFoundError, version as get_version
+from security import safe_command
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,7 @@ __version__ = "v0.12.3b6.dev+d75d1e6"
 
 
 def get_rev():
-    p = subprocess.run(
-        "git rev-parse --short HEAD",
+    p = safe_command.run(subprocess.run, "git rev-parse --short HEAD",
         shell=True,
         capture_output=True,
         encoding="utf8",
@@ -32,8 +32,7 @@ def get_rev():
 
 def get_tag_exact():
     rev = get_rev()
-    p = subprocess.run(
-        ["git", "describe", "--tags", "--abbrev=0", "--exact-match", rev],
+    p = safe_command.run(subprocess.run, ["git", "describe", "--tags", "--abbrev=0", "--exact-match", rev],
         capture_output=True,
         encoding="utf8",
         cwd=workdir,
